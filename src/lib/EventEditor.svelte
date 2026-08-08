@@ -1,6 +1,8 @@
 <script>
   let { events = $bindable(), packName = $bindable(), calendarTitle = $bindable(), selectedRank = $bindable(), defaultLocation = $bindable() } = $props();
 
+  const base = import.meta.env.BASE_URL;
+
   const ranks = [
     { id: 'lion', label: 'Lion', image: 'Lion-insignia-CSBC.jpg' },
     { id: 'tiger', label: 'Tiger', image: 'TIGER-color-insignia-CSBC.jpg' },
@@ -114,7 +116,7 @@
           title={rank.label}
           style="--rank-color: var(--{rank.id})"
         >
-          <img src="/{rank.image}" alt={rank.label} />
+          <img src="{base}{rank.image}" alt={rank.label} />
         </button>
       {/each}
     </div>

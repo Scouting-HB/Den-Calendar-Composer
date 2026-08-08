@@ -1,6 +1,8 @@
 <script>
   let { events, packName, calendarTitle, selectedRank, defaultLocation } = $props();
 
+  const base = import.meta.env.BASE_URL;
+
   const rankImages = {
     lion: 'Lion-insignia-CSBC.jpg',
     tiger: 'TIGER-color-insignia-CSBC.jpg',
@@ -58,12 +60,12 @@
 <div class="page" style="--rank-color: var(--{selectedRank})">
   <!-- Header -->
   <div class="header">
-    <img class="rank-badge" src="/{rankImages[selectedRank]}" alt={rankLabels[selectedRank]} />
+    <img class="rank-badge" src="{base}{rankImages[selectedRank]}" alt={rankLabels[selectedRank]} />
     <div class="header-text">
       <h1>{packName}</h1>
       <h2>{calendarTitle}{#if rankLabels[selectedRank]} &mdash; {rankLabels[selectedRank]} Den{/if}</h2>
     </div>
-    <img class="rank-badge" src="/{rankImages[selectedRank]}" alt={rankLabels[selectedRank]} />
+    <img class="rank-badge" src="{base}{rankImages[selectedRank]}" alt={rankLabels[selectedRank]} />
   </div>
 
   {#if defaultLocation}
