@@ -1,0 +1,48 @@
+:root {
+  --lion: #EEC250;
+  --tiger: #DA834C;
+  --wolf: #C6443F;
+  --bear: #9FC2DC;
+  --webelos: #8E9F63;
+  --arrow-of-light: #E9D8C5;
+  --cub-blue: #002F6D;
+  --cub-yellow: #FFCE04;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #e8e8e8;
+}
+
+#app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+
+  .editor-pane {
+    display: none !important;
+  }
+
+  .preview-pane {
+    padding: 0 !important;
+    background: #fff !important;
+    overflow: visible !important;
+  }
+
+  .app-layout {
+    height: auto !important;
+    overflow: visible !important;
+  }
+}
