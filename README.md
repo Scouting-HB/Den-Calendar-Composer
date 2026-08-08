@@ -1,43 +1,57 @@
-# Svelte + Vite
+# Den Schedule Calendar Builder
 
-This template should help get you started developing with Svelte in Vite.
+A client-side Svelte + Vite app for building printable Cub Scout den schedule calendars. Paste event data from a spreadsheet, pick a rank, and print a nicely formatted calendar handout.
 
-## Recommended IDE Setup
+## Setup
 
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
-
-## Need an official Svelte framework?
-
-Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also powered by Vite. Deploy anywhere with its serverless-first approach and adapt to various platforms, with out of the box support for TypeScript, SCSS, and Less, and easily-added support for mdsvex, GraphQL, PostCSS, Tailwind CSS, and more.
-
-## Technical considerations
-
-**Why use this over SvelteKit?**
-
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
-
-This template contains as little as possible to get started with Vite + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
-
-Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
-
-**Why include `.vscode/extensions.json`?**
-
-Other templates indirectly recommend extensions via the README, but this file allows VS Code to prompt the user to install the recommended extension upon opening the project.
-
-**Why enable `checkJs` in the JS template?**
-
-It is likely that most cases of changing variable types in runtime are likely to be accidental, rather than deliberate. This provides advanced typechecking out of the box. Should you like to take advantage of the dynamically-typed nature of JavaScript, it is trivial to change the configuration.
-
-**Why is HMR not preserving my local component state?**
-
-HMR state preservation comes with a number of gotchas! It has been disabled by default in both `svelte-hmr` and `@sveltejs/vite-plugin-svelte` due to its often surprising behavior. You can read the details [here](https://github.com/sveltejs/svelte-hmr/tree/master/packages/svelte-hmr#preservation-of-local-state).
-
-If you have state that's important to retain within a component, consider creating an external store which would not be replaced by HMR.
-
-```js
-// store.js
-// An extremely simple external store
-import { writable } from 'svelte/store'
-export default writable(0)
+```bash
+npm install
+npm run dev
 ```
+
+## How it works
+
+- **Left pane (editor):** Configure pack name, calendar title, default meeting location, and rank. Add events manually or paste tab-separated rows (Date | Title | Location) from Excel or Google Sheets.
+- **Right pane (preview):** Live preview of the printable calendar, styled with rank colors and insignia badges, grouped by month.
+- **Print:** Click "Print / Save PDF" to print. The editor pane is hidden in print mode so only the calendar prints.
+
+## Project structure
+
+```
+src/
+  App.svelte              - Main layout: editor + preview side by side
+  app.css                 - Global styles and CSS custom properties (scout colors)
+  main.js                 - Svelte mount entrypoint
+  lib/
+    EventEditor.svelte    - Editor pane: settings, rank picker, paste area, events table
+    CalendarPreview.svelte - Print-ready calendar preview grouped by month
+
+scouts-assets/            - Source rank insignia JPGs and scouts.css color definitions
+public/                   - Rank insignia JPGs copied here for serving
+
+prior-work/
+  Den Schedule Template.docx - Reference document showing the target output format
+```
+
+## Scout rank colors (from scouts-assets/scouts.css)
+
+| Rank | Color |
+|------|-------|
+| Lion | `#EEC250` |
+| Tiger | `#DA834C` |
+| Wolf | `#C6443F` |
+| Bear | `#9FC2DC` |
+| Webelos | `#8E9F63` |
+| Arrow of Light | `#E9D8C5` |
+| Cub Blue | `#002F6D` |
+| Cub Yellow | `#FFCE04` |
+
+## Status
+
+Work in progress. Core functionality is in place:
+- [x] Rank picker with insignia icons
+- [x] Paste from spreadsheet (tab, comma, or pipe separated)
+- [x] Live calendar preview with rank theming
+- [x] Print/PDF support
+- [ ] Polish layout and typography to better match the prior-work docx
+- [ ] Improve date column sizing in editor table
