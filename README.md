@@ -55,3 +55,14 @@ Work in progress. Core functionality is in place:
 - [x] Print/PDF support
 - [ ] Polish layout and typography to better match the prior-work docx
 - [ ] Improve date column sizing in editor table
+
+
+## References
+
+1. Adventures
+    1. https://www.scouting.org/programs/cub-scouts/adventures/lion/
+    2. https://www.scouting.org/programs/cub-scouts/adventures/tiger/
+    3. https://www.scouting.org/programs/cub-scouts/adventures/wolf/
+    4. https://www.scouting.org/programs/cub-scouts/adventures/bear/
+    5. https://www.scouting.org/programs/cub-scouts/adventures/webelos/
+    6. https://www.scouting.org/programs/cub-scouts/adventures/arrow-of-light/

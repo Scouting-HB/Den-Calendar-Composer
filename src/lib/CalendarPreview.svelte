@@ -60,7 +60,7 @@
 <div class="page" style="--rank-color: var(--{selectedRank})">
   <!-- Header -->
   <div class="header">
-    <img class="rank-badge" src="{base}{rankImages[selectedRank]}" alt={rankLabels[selectedRank]} />
+    <img class="pack-logo" src="{base}logo.png" alt="Pack logo" />
     <div class="header-text">
       <h1>{packName}</h1>
       <h2>{calendarTitle}{#if rankLabels[selectedRank]} &mdash; {rankLabels[selectedRank]} Den{/if}</h2>
@@ -86,10 +86,16 @@
                 <span class="event-day-num">{event.dayNum}</span>
                 <span class="event-day-name">({event.dayName})</span>
               </div>
+              {#if event.unit}
+                <span class="event-unit">{event.unit}</span>
+              {/if}
               <div class="event-details">
                 <span class="event-title">{event.title}</span>
                 {#if event.location}
                   <span class="event-location">{event.location}</span>
+                {/if}
+                {#if event.adventure}
+                  <span class="event-adventure">{event.adventure}{#if event.activity}: {event.activity}{/if}</span>
                 {/if}
               </div>
             </div>
@@ -127,6 +133,13 @@
     margin-bottom: 12px;
     padding-bottom: 10px;
     border-bottom: 3px solid var(--rank-color);
+  }
+
+  .pack-logo {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    flex-shrink: 0;
   }
 
   .rank-badge {
@@ -214,6 +227,19 @@
     font-size: 11px;
   }
 
+  .event-unit {
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #fff;
+    background: var(--cub-blue);
+    padding: 1px 6px;
+    border-radius: 2px;
+    letter-spacing: 0.03em;
+    align-self: center;
+  }
+
   .event-details {
     flex: 1;
   }
@@ -227,6 +253,13 @@
     display: block;
     font-size: 10.5px;
     color: #777;
+  }
+
+  .event-adventure {
+    display: block;
+    font-size: 10.5px;
+    color: var(--rank-color);
+    font-style: italic;
   }
 
   .footer {

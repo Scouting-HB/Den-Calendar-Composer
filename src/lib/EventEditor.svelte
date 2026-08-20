@@ -1,7 +1,19 @@
 <script>
+  import { getAdventures } from './adventures.js';
+
   let { events = $bindable(), packName = $bindable(), calendarTitle = $bindable(), selectedRank = $bindable(), defaultLocation = $bindable() } = $props();
 
   const base = import.meta.env.BASE_URL;
+
+  let adventures = $derived(getAdventures(selectedRank));
+
+  let activityMap = $derived.by(() => {
+    const map = {};
+    for (const a of [...adventures.required, ...adventures.elective]) {
+      map[a.name] = a.activities;
+    }
+    return map;
+  });
 
   const ranks = [
     { id: 'lion', label: 'Lion', image: 'Lion-insignia-CSBC.jpg' },
@@ -11,6 +23,33 @@
     { id: 'webelos', label: 'Webelos', image: 'Webelos Oval-color-insignia-CSBC.jpg' },
     { id: 'arrow-of-light', label: 'Arrow of Light', image: 'Arrow of Light-insignia-CSBC.jpg' },
   ];
+
+  let customAdventure = $state({});
+  let customActivity = $state({});
+
+  function onAdventureChange(i, value) {
+    if (value === '__other__') {
+      customAdventure[i] = true;
+      events[i].adventure = '';
+      events[i].activity = '';
+      customActivity[i] = false;
+    } else {
+      customAdventure[i] = false;
+      events[i].adventure = value;
+      events[i].activity = '';
+      customActivity[i] = false;
+    }
+  }
+
+  function onActivityChange(i, value) {
+    if (value === '__other__') {
+      customActivity[i] = true;
+      events[i].activity = '';
+    } else {
+      customActivity[i] = false;
+      events[i].activity = value;
+    }
+  }
 
   function handlePaste(e) {
     const text = e.clipboardData.getData('text/plain');
@@ -22,22 +61,26 @@
     for (const line of lines) {
       const parts = line.split('\t');
       if (parts.length >= 2) {
-        // Tab-separated: Date \t Title [\t Location]
         const dateStr = parseDate(parts[0].trim());
-        const title = parts[1].trim();
-        const location = parts.length >= 3 ? parts[2].trim() : '';
+        const unit = parts.length >= 3 ? parts[1].trim() : '';
+        const title = parts.length >= 3 ? parts[2].trim() : parts[1].trim();
+        const location = parts.length >= 4 ? parts[3].trim() : '';
+        const adventure = parts.length >= 5 ? parts[4].trim() : '';
+        const activity = parts.length >= 6 ? parts[5].trim() : '';
         if (dateStr && title) {
-          parsed.push({ date: dateStr, title, location });
+          parsed.push({ date: dateStr, unit, title, location, adventure, activity });
         }
       } else {
-        // Try comma or pipe separated as fallback
         const altParts = line.split(/[|,]/).map(s => s.trim());
         if (altParts.length >= 2) {
           const dateStr = parseDate(altParts[0]);
-          const title = altParts[1];
-          const location = altParts.length >= 3 ? altParts[2] : '';
+          const unit = altParts.length >= 3 ? altParts[1] : '';
+          const title = altParts.length >= 3 ? altParts[2] : altParts[1];
+          const location = altParts.length >= 4 ? altParts[3] : '';
+          const adventure = altParts.length >= 5 ? altParts[4] : '';
+          const activity = altParts.length >= 6 ? altParts[5] : '';
           if (dateStr && title) {
-            parsed.push({ date: dateStr, title, location });
+            parsed.push({ date: dateStr, unit, title, location, adventure, activity });
           }
         }
       }
@@ -51,12 +94,10 @@
   }
 
   function parseDate(str) {
-    // Try various date formats
     const d = new Date(str);
     if (!isNaN(d.getTime())) {
       return d.toISOString().split('T')[0];
     }
-    // Try MM/DD/YYYY
     const match = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
     if (match) {
       const year = match[3].length === 2 ? '20' + match[3] : match[3];
@@ -69,15 +110,19 @@
   }
 
   function addRow() {
-    events = [...events, { date: '', title: '', location: '' }];
+    events = [...events, { date: '', unit: '', title: '', location: '', adventure: '', activity: '' }];
   }
 
   function removeRow(index) {
     events = events.filter((_, i) => i !== index);
+    delete customAdventure[index];
+    delete customActivity[index];
   }
 
   function clearAll() {
     events = [];
+    customAdventure = {};
+    customActivity = {};
   }
 
   function printPreview() {
@@ -85,29 +130,27 @@
   }
 </script>
 
-<div class="editor">
-  <div class="editor-header">
-    <h1>Den Calendar Builder</h1>
+<div class="editor p-3">
+  <h1 class="editor-title mb-3">Den Calendar Builder</h1>
+
+  <div class="mb-3">
+    <label class="form-label form-label-sm text-uppercase text-muted fw-semibold ls">Pack Name</label>
+    <input type="text" bind:value={packName} class="form-control form-control-sm" />
   </div>
 
-  <div class="section">
-    <label class="field-label">Pack Name</label>
-    <input type="text" bind:value={packName} class="text-input" />
+  <div class="mb-3">
+    <label class="form-label form-label-sm text-uppercase text-muted fw-semibold ls">Calendar Title</label>
+    <input type="text" bind:value={calendarTitle} class="form-control form-control-sm" />
   </div>
 
-  <div class="section">
-    <label class="field-label">Calendar Title</label>
-    <input type="text" bind:value={calendarTitle} class="text-input" />
+  <div class="mb-3">
+    <label class="form-label form-label-sm text-uppercase text-muted fw-semibold ls">Default Meeting Location</label>
+    <input type="text" bind:value={defaultLocation} class="form-control form-control-sm" style="font-size: 0.8rem" />
   </div>
 
-  <div class="section">
-    <label class="field-label">Default Meeting Location</label>
-    <input type="text" bind:value={defaultLocation} class="text-input small" />
-  </div>
-
-  <div class="section">
-    <label class="field-label">Rank</label>
-    <div class="rank-picker">
+  <div class="mb-3">
+    <label class="form-label form-label-sm text-uppercase text-muted fw-semibold ls">Rank</label>
+    <div class="d-flex gap-1">
       {#each ranks as rank}
         <button
           class="rank-btn"
@@ -122,112 +165,135 @@
     </div>
   </div>
 
-  <div class="section">
-    <div class="section-header">
-      <label class="field-label">Events</label>
-      <div class="btn-group">
-        <button class="btn btn-sm" onclick={addRow}>+ Add Row</button>
-        <button class="btn btn-sm btn-danger" onclick={clearAll}>Clear</button>
+  <div class="mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-1">
+      <label class="form-label form-label-sm text-uppercase text-muted fw-semibold ls mb-0">Events</label>
+      <div class="btn-group btn-group-sm">
+        <button class="btn btn-outline-secondary btn-sm" onclick={addRow}>+ Add Row</button>
+        <button class="btn btn-outline-danger btn-sm" onclick={clearAll}>Clear</button>
       </div>
     </div>
 
     <textarea
-      class="paste-area"
-      placeholder="Paste rows from Excel or Google Sheets here (Date | Title | Location)"
+      class="form-control form-control-sm paste-area mb-2"
+      placeholder="Paste rows from Excel or Google Sheets here (Date | Unit | Title | Location | Adventure | Activity)"
       onpaste={handlePaste}
+      rows="2"
     ></textarea>
 
-    <div class="events-table">
-      <div class="table-header">
-        <span class="col-date">Date</span>
-        <span class="col-title">Title</span>
-        <span class="col-loc">Location</span>
-        <span class="col-del"></span>
-      </div>
-      {#each events as event, i}
-        <div class="table-row">
-          <input
-            type="date"
-            class="col-date"
-            bind:value={event.date}
-          />
-          <input
-            type="text"
-            class="col-title"
-            bind:value={event.title}
-            placeholder="Event title"
-          />
-          <input
-            type="text"
-            class="col-loc"
-            bind:value={event.location}
-            placeholder="Location, time"
-          />
-          <button class="col-del del-btn" onclick={() => removeRow(i)} title="Remove">&times;</button>
-        </div>
-      {/each}
-      {#if events.length === 0}
-        <div class="empty-state">
-          No events yet. Add rows or paste from a spreadsheet.
-        </div>
-      {/if}
+    <div class="table-responsive">
+      <table class="table table-sm table-bordered table-hover mb-0 events-table">
+        <thead>
+          <tr>
+            <th class="col-date">Date</th>
+            <th class="col-unit">Unit</th>
+            <th class="col-title">Title</th>
+            <th class="col-loc">Location</th>
+            <th class="col-agenda">Agenda</th>
+            <th class="col-del"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {#each events as event, i}
+            <tr>
+              <td class="col-date"><input type="date" bind:value={event.date} class="form-control form-control-sm border-0 px-1" /></td>
+              <td class="col-unit"><input type="text" bind:value={event.unit} placeholder="Pack/Den" class="form-control form-control-sm border-0 px-1" /></td>
+              <td class="col-title"><input type="text" bind:value={event.title} placeholder="Event title" class="form-control form-control-sm border-0 px-1" /></td>
+              <td class="col-loc"><input type="text" bind:value={event.location} placeholder="Location, time" class="form-control form-control-sm border-0 px-1" /></td>
+              <td class="col-agenda">
+                <div class="d-flex flex-column gap-1 p-1">
+                  {#if customAdventure[i]}
+                    <div class="input-group input-group-sm">
+                      <input
+                        type="text"
+                        bind:value={event.adventure}
+                        placeholder="Adventure name"
+                        class="form-control form-control-sm"
+                      />
+                      <button class="btn btn-outline-secondary btn-sm" onclick={() => { customAdventure[i] = false; event.adventure = ''; }} title="Pick from list">&larr;</button>
+                    </div>
+                  {:else}
+                    <select
+                      value={event.adventure}
+                      onchange={(e) => onAdventureChange(i, e.target.value)}
+                      class="form-select form-select-sm"
+                    >
+                      <option value="">Adventure...</option>
+                      <optgroup label="Required">
+                        {#each adventures.required as adv}
+                          <option value={adv.name}>{adv.name}</option>
+                        {/each}
+                      </optgroup>
+                      <optgroup label="Elective">
+                        {#each adventures.elective as adv}
+                          <option value={adv.name}>{adv.name}</option>
+                        {/each}
+                      </optgroup>
+                      <option value="__other__">Other...</option>
+                    </select>
+                  {/if}
+
+                  {#if event.adventure && (activityMap[event.adventure]?.length || customAdventure[i])}
+                    {#if customActivity[i] || customAdventure[i]}
+                      <div class="input-group input-group-sm">
+                        <input
+                          type="text"
+                          bind:value={event.activity}
+                          placeholder="Activity name"
+                          class="form-control form-control-sm"
+                        />
+                        {#if !customAdventure[i]}
+                          <button class="btn btn-outline-secondary btn-sm" onclick={() => { customActivity[i] = false; event.activity = ''; }} title="Pick from list">&larr;</button>
+                        {/if}
+                      </div>
+                    {:else if activityMap[event.adventure]?.length}
+                      <select
+                        value={event.activity}
+                        onchange={(e) => onActivityChange(i, e.target.value)}
+                        class="form-select form-select-sm"
+                      >
+                        <option value="">Activity...</option>
+                        {#each activityMap[event.adventure] as act}
+                          <option value={act.name}>Req {act.reqs.join(',')} - {act.name}</option>
+                        {/each}
+                        <option value="__other__">Other...</option>
+                      </select>
+                    {/if}
+                  {/if}
+                </div>
+              </td>
+              <td class="col-del align-middle text-center">
+                <button class="btn btn-sm btn-link text-danger p-0" onclick={() => removeRow(i)} title="Remove">&times;</button>
+              </td>
+            </tr>
+          {/each}
+          {#if events.length === 0}
+            <tr>
+              <td colspan="6" class="text-center text-muted py-4">
+                No events yet. Add rows or paste from a spreadsheet.
+              </td>
+            </tr>
+          {/if}
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <div class="section">
-    <button class="btn btn-primary btn-print" onclick={printPreview}>
-      Print / Save PDF
-    </button>
-  </div>
+  <button class="btn btn-primary w-100" onclick={printPreview}>
+    Print / Save PDF
+  </button>
 </div>
 
 <style>
-  .editor {
-    padding: 20px;
-  }
-
-  .editor-header h1 {
+  .editor-title {
     font-size: 20px;
     font-weight: 700;
     color: var(--cub-blue);
-    margin-bottom: 16px;
   }
 
-  .section {
-    margin-bottom: 16px;
-  }
-
-  .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 4px;
-  }
-
-  .field-label {
-    display: block;
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
+  .ls {
     letter-spacing: 0.05em;
-    color: #666;
-    margin-bottom: 4px;
-  }
-
-  .text-input {
-    width: 100%;
-    padding: 8px 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-  }
-  .text-input.small {
-    font-size: 12px;
-  }
-
-  .rank-picker {
-    display: flex;
-    gap: 6px;
+    font-size: 11px;
   }
 
   .rank-btn {
@@ -252,143 +318,48 @@
   }
 
   .paste-area {
-    width: 100%;
-    height: 48px;
-    border: 2px dashed #ccc;
-    border-radius: 6px;
-    padding: 12px;
-    font-size: 12px;
-    color: #999;
-    background: #fafafa;
-    resize: none;
-    margin-bottom: 8px;
+    border-style: dashed !important;
     text-align: center;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-  .paste-area:focus {
-    border-color: var(--cub-blue);
-    background: #fff;
+    color: #999;
+    resize: none;
   }
 
-  .events-table {
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    overflow: hidden;
-  }
-
-  .table-header {
-    display: flex;
-    gap: 1px;
+  .events-table thead {
     background: var(--cub-blue);
     color: #fff;
+  }
+  .events-table thead th {
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    padding: 6px 0;
-  }
-  .table-header span {
-    padding: 0 8px;
+    border-color: var(--cub-blue) !important;
   }
 
-  .table-row {
-    display: flex;
-    gap: 1px;
-    border-top: 1px solid #eee;
-  }
+  .col-date { width: 120px; }
+  .col-unit { width: 60px; }
+  .col-agenda { width: 200px; }
+  .col-del { width: 32px; }
 
-  .col-date {
-    width: 120px;
-    min-width: 120px;
-    max-width: 120px;
-    flex: 0 0 120px;
-  }
-  .col-title {
-    flex: 1;
-    min-width: 0;
-  }
-  .col-loc {
-    flex: 1;
-    min-width: 0;
-  }
-  .col-del {
-    width: 30px;
-    flex-shrink: 0;
-    text-align: center;
-  }
-
-  .table-row input {
-    border: none;
-    padding: 6px 8px;
+  .events-table td input.form-control {
     font-size: 12px;
-    outline: none;
     background: transparent;
-    width: 100%;
   }
-  .table-row input:focus {
+  .events-table td input.form-control:focus {
     background: #fffde7;
+    box-shadow: none;
   }
 
-  .del-btn {
-    background: none;
-    border: none;
-    color: #ccc;
-    font-size: 18px;
-    cursor: pointer;
-    padding: 0;
-    line-height: 1;
-  }
-  .del-btn:hover {
-    color: var(--wolf);
+  .events-table .form-select {
+    font-size: 11px;
   }
 
-  .empty-state {
-    padding: 24px;
-    text-align: center;
-    color: #aaa;
-    font-size: 13px;
-  }
-
-  .btn-group {
-    display: flex;
-    gap: 6px;
-  }
-
-  .btn {
-    padding: 6px 14px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background: #fff;
-    cursor: pointer;
-    font-size: 13px;
-  }
-  .btn:hover {
-    background: #f5f5f5;
-  }
-  .btn-sm {
-    padding: 4px 10px;
-    font-size: 12px;
-  }
-  .btn-danger {
-    color: var(--wolf);
-    border-color: var(--wolf);
-  }
-  .btn-danger:hover {
-    background: #fef2f2;
-  }
   .btn-primary {
-    background: var(--cub-blue);
-    color: #fff;
+    background-color: var(--cub-blue);
     border-color: var(--cub-blue);
-    font-weight: 600;
   }
   .btn-primary:hover {
-    background: #001d45;
-  }
-  .btn-print {
-    width: 100%;
-    padding: 10px;
-    font-size: 15px;
+    background-color: #001d45;
+    border-color: #001d45;
   }
 </style>
